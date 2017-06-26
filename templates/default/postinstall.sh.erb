@@ -1,0 +1,835 @@
+#!/usr/bin/env bash
+# Produced by Saltstack -- changes will be overwritten
+#
+# Make sure any new files are created with a secure access mask.  Do not use
+# chmod, since that would also change the rights of any existing files, and
+# we are only interested in setting the rights for new files.
+#
+umask 022
+
+#
+# The package assumes that Gnome is either installed, or going to be
+# installed, so if nothing currently exists, then install in the default
+# location.
+#
+# NOTE: These variables must be defined before all the shell function macros
+#       are included.
+#
+if [ -z "${GNOMEDIR}" ]; then
+    GNOMEDIR=/usr
+fi
+
+#
+# RPM_INSTALL_PREFIX doesn't seem to be set by "alien" so the following
+# minor kludge allows some functionality on debian-like systems (such
+# a Ubuntu) which don't support packages.
+#
+if [ -z "${RPM_INSTALL_PREFIX}" ]; then
+RPM_INSTALL_PREFIX="<%= node['java']['oracle']['config']['app_dir'] %>"
+fi
+
+#
+# Gross kludge for old SuSE distros: Even though they set the environment
+# variable GNOMEDIR to /opt/gnome, Gnome may really be in /opt/gnome2.
+# Go figure,... (I feel so unclean....)
+#
+if [ "${GNOMEDIR}" = "/opt/gnome" ] && [ -d "/opt/gnome2" ]; then
+GNOMEDIR="/opt/gnome2"
+fi
+
+INSTALL_JRE_PATH=${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>
+if [ -e ${INSTALL_JRE_PATH}/jre/bin/java ]; then
+INSTALL_JRE_PATH=${INSTALL_JRE_PATH}/jre
+fi
+
+#
+# Add the shell function and related variables used by the post-install.
+#
+ERROR_MISSING_PARAM=1000
+ERROR_MISSING_PACKED_JAR=1001
+ERROR_BAD_PARAM=1002
+ERROR_MISSING_UNPACK200=1003
+unpack_jars() {
+status=0
+if [ $# -lt 3 ]; then
+    printf "Error: usage - no packed files specified, nothing to do:\n\n" \
+                                                            >> /dev/stderr
+    printf "\t unpack_jars\n" "$*"                          >> /dev/stderr
+    status=${ERROR_MISSING_PARAM}
+else
+    unpack200=$1
+    root=$2
+    shift 2
+    if [ -f ${unpack200} ]; then
+        if [ -d ${root} ]; then
+            printf "Unpacking JAR files...\n"
+            for file in $*; do
+                pack_file=`basename ${file} .jar`.pack
+                pack_src=${root}/`dirname ${file}`/${pack_file}
+                jar_dest=${root}/${file}
+                printf "\t`basename ${file}`...\n"
+                ${unpack200} ${pack_src} ${jar_dest}
+                if [ ! -f ${jar_dest} ]; then
+                    printf "Error: unpack could not "       >> /dev/stderr
+                    printf "create JAR file:\n\n"           >> /dev/stderr
+                    printf "\t${jar_dest}\n\n"              >> /dev/stderr
+                    printf "Please refer to the "           >> /dev/stderr
+                    printf "Troubleshooting section of "    >> /dev/stderr
+                    printf "the Installation "              >> /dev/stderr
+                    printf "Instructions\n"                 >> /dev/stderr
+                    printf "on the download page.\n"        >> /dev/stderr
+                    status=${ERROR_MISSING_PACKED_JAR}
+                fi
+                rm -f ${pack_src}
+            done
+        else
+            printf "Error: usage - the base path for the "  >> /dev/stderr
+            printf "packed JAR files is "                   >> /dev/stderr
+            printf "invalid:\n\n"                           >> /dev/stderr
+            printf "\tunpack_jars $*\n"                     >> /dev/stderr
+            status=${ERROR_BAD_PARAM}
+        fi
+    else
+        printf "Error: unpack200 - command could not be "   >> /dev/stderr
+        printf "found.\n\n"                                 >> /dev/stderr
+        printf "Please refer to the Troubleshooting "       >> /dev/stderr
+        printf "section of the"                             >> /dev/stderr
+        printf "Installation Instructions\n"                >> /dev/stderr
+        printf "on the download page.\n"                    >> /dev/stderr
+        status=${ERROR_MISSING_UNPACK200}
+    fi
+fi
+return ${status}
+}
+NS_COMMENT1="#--Netscape Communications Corporation MIME Information"
+NS_COMMENT2="#Do not delete the above line. It is used to identify the file type."
+NS_COMMENT3="#mime types added by Netscape Helper"
+UpdateMailcap() {
+mailcap_file="$1"
+mime_type="$2"
+command="$3"
+if [ -z "`grep -E \"^${mime_type}; ${command}$\" \"${mailcap_file}\" 2> /dev/null`" ]; then
+    mc_comment="# Java Web Start"
+    mc_text=
+    if [ -w "${mailcap_file}" ]; then
+        regexp="(${mime_type})|(${mc_comment})"
+        mc_text=`grep -Ev "${regexp}" "${mailcap_file}"`
+    fi
+    if [ -w "`dirname \"${mailcap_file}\"`" ]; then
+        mc_text="${mc_text:+${mc_text}\n}${mime_type}; ${command}"
+        echo -e "${mc_text}" > "${mailcap_file}"
+    else
+        echo "WARNING - cannot write to file:"
+        echo "       ${mailcap_file}"
+        echo "Check permissions."
+    fi
+fi
+}
+RemoveMailcap() {
+mailcap_file="$1"
+mime_type="$2"
+mc_comment="# Java Web Start"
+if [ -w "${mailcap_file}" ]; then
+    if [ -n "`grep \"${mime_type}\" \"${mailcap_file}\"`" ] ; then
+        regexp="(${mime_type})|(${mc_comment})"
+        mc_text=`grep -Ev "${regexp}" "${mailcap_file}"`
+        if [ `echo "${mc_text}" | tr -d '[:space:]' | wc -c` -gt 0 ]; then
+            echo "${mc_text}" > "${mailcap_file}"
+        else
+            rm -f "${mailcap_file}"
+        fi
+    fi
+fi
+}
+UpdateMimeTypes() {
+mime_file="$1"
+mime_type="$2"
+desc="$3"
+shift 3
+exts="$*"
+JNLP_ENTRY="type=${mime_type} desc=\"${desc}\" exts=\"${exts}\""
+if [ ! -w "${mime_file}" ]; then
+    if [ -w `dirname ${mime_file}` ]; then
+        echo "${NS_COMMENT1}"  > "${mime_file}"
+        echo "${NS_COMMENT2}" >> "${mime_file}"
+        echo "${NS_COMMENT3}" >> "${mime_file}"
+    else
+        echo "WARNING - cannot write to file:"
+        echo "       ${mime_file}"
+        echo "Check permissions."
+        return
+    fi
+fi
+if [ -z "`grep -E \"^[^#]*${mime_type}\" \"${mime_file}\"`" ]; then
+    echo ${JNLP_ENTRY} >> "${mime_file}"
+fi
+}
+RemoveMimeTypes() {
+mime_file="$1"
+mime_type="$2"
+if [ -w "${mime_file}" ]; then
+    if [ -n "`grep \"${mime_type}\" \"${mime_file}\"`" ]; then
+        regexp="(${mime_type})|(^${NS_COMMENT1}$)|(^${NS_COMMENT2}$)|(^${NS_COMMENT3}$)"
+        if [ `grep -Ev "${regexp}" "${mime_file}" | \
+             tr -d '[:space:]' | wc -c` -gt 0 ]
+        then
+            mt_text="`grep -v \"${mime_type}\" \"${mime_file}\"`"
+            echo "${mt_text}" > "${mime_file}"
+        else
+            rm -f "${mime_file}"
+        fi
+    fi
+fi
+}
+MOST_DIGITS="[1-9]"
+ALL_DIGITS="[0-9]"
+COUNTING_NUMBER="${MOST_DIGITS}${ALL_DIGITS}*\|0"
+VALID_NON_NUMERIC="[-_.a-zA-Z]"
+VALID_CHARS="[-_.a-zA-Z0-9]"
+MAJOR_RULE="\(${MOST_DIGITS}${ALL_DIGITS}*\)"
+MINOR_RULE="\(${COUNTING_NUMBER}\)"
+MICRO_RULE="\(${COUNTING_NUMBER}\)"
+UPDATE_RULE="\(${MOST_DIGITS}${ALL_DIGITS}${ALL_DIGITS}\|${MOST_DIGITS}${ALL_DIGITS}\|0${ALL_DIGITS}\)"
+NON_FCS_ID_RULE="\([a-zA-Z0-9]*\)"
+MIN_VERSION_ID_RULE="${MAJOR_RULE}\.${MINOR_RULE}\.${MICRO_RULE}"
+FCS_VERSION_ID_RULE="${MIN_VERSION_ID_RULE}\(_${UPDATE_RULE}\)\?"
+VERSION_ID_RULE="${FCS_VERSION_ID_RULE}\(-${NON_FCS_ID_RULE}\)\?"
+NAME_ID_RULE="${VALID_CHARS}*${VALID_NON_NUMERIC}"
+KNOWN_GOOD_NAME_LIST="java jdk jre j2sdk j2re"
+PRS_ERROR_BAD_PARAMS=2000
+expand_version() {
+status=0
+if [ $# -eq 0 ]; then
+    read release remainder
+    status=$?
+    if [ ${status} -ne 0 ]; then
+        printf "Error(${status}: failed to read!\n"         >> /dev/stderr
+        status=${PRS_ERROR_BAD_PARAMS}
+    elif [ -z "${release}" ]; then
+        printf "Error: usage - function requires input!\n"  >> /dev/stderr
+        status=${PRS_ERROR_BAD_PARAMS}
+    elif [ -n "${remainder}" ]; then
+        printf "Error: too many words read:\n\n"            >> /dev/stderr
+        printf "\t${release} ${remainder}\n"                >> /dev/stderr
+        status=${PRS_ERROR_BAD_PARAMS}
+    fi
+elif [ $# -eq 1 ]; then
+    release=$1
+else
+    printf "Error: usage - function takes 1 parameter:\n\n" >> /dev/stderr
+    printf "\t expand_version $*\n"                         >> /dev/stderr
+    status=${PRS_ERROR_BAD_PARAMS}
+fi
+if [ ${status} -eq 0 ]; then
+    format="%d\t%d\t%d\t%d\n"
+    echo ${release} | sed -e "s/_/\./g" | \
+      awk -v format="${format}" 'BEGIN { FS = "." } { printf format, $1, $2, $3, $4 }'
+fi
+return ${status}
+}
+parse_release() {
+status=0
+if [ $# -eq 0 ]; then
+    read string remainder
+    status=$?
+    if [ ${status} -ne 0 ]; then
+        printf "Error(${status}: failed to read!\n"         >> /dev/stderr
+        status=${PRS_ERROR_BAD_PARAMS}
+    elif [ -z "${string}" ]; then
+        printf "Error: usage - function requires input!\n"  >> /dev/stderr
+        status=${PRS_ERROR_BAD_PARAMS}
+    elif [ -n "${remainder}" ]; then
+        printf "Error: too many words read:\n\n"            >> /dev/stderr
+        printf "\t${string} ${remainder}\n"                 >> /dev/stderr
+        status=${PRS_ERROR_BAD_PARAMS}
+    fi
+elif [ $# -eq 1 ]; then
+    string=$1
+else
+    printf "Error: usage - function takes 1 parameter:\n\n" >> /dev/stderr
+    printf "\t parse_release $*\n"                          >> /dev/stderr
+    status=${PRS_ERROR_BAD_PARAMS}
+fi
+if [ ${status} -eq 0 ]; then
+    version_id=`expr "${string}" : "${NAME_ID_RULE}\(${VERSION_ID_RULE}\)\$"`
+    if [ -n "${version_id}" ]; then
+        name_id=`expr "${string}" : "\(${NAME_ID_RULE}\)${VERSION_ID_RULE}\$"`
+        fcs_part=`expr "${string}" : "${NAME_ID_RULE}\(${FCS_VERSION_ID_RULE}\).*\$"`
+        non_fcs_part=`expr "${version_id}" : "[^-]*-\(${NON_FCS_ID_RULE}\)\$"`
+        printf "${name_id}\t${fcs_part}\t${non_fcs_part}\n"
+    fi
+fi
+return ${status}
+}
+UNKNOWN_NAME_WEIGHT=1000
+get_name_weight() {
+status=0
+if [ "$1" = "-" ]; then
+    read name good_names
+    status=$?
+    if [ ${status} -ne 0 ]; then
+        printf "Error(${status}: failed to read!\n"                >> /dev/stderr
+        status=${PRS_ERROR_BAD_PARAMS}
+    else
+        shift 1
+        if [ $# -gt 0 ]; then
+            good_names="$*"
+        fi
+        if [ -z "${name}" ]; then
+            printf "Error: usage - function requires input!\n"     >> /dev/stderr
+            status=${PRS_ERROR_BAD_PARAMS}
+        fi
+    fi
+elif [ $# -gt 1 ]; then
+    name=$1
+    shift 1
+    good_names="$*"
+else
+    printf "Error: usage - function takes 2+ parameters:\n\n"      >> /dev/stderr
+    printf "\t get_name_weight $*\n"                               >> /dev/stderr
+    status=${PRS_ERROR_BAD_PARAMS}
+fi
+if [ ${status} -eq 0 ]; then
+    if [ -n "${good_names}" ]; then
+        length=`expr length "${good_names}"`
+        pos=`expr "${good_names}" : ".*\<${name}\>"`
+        if [ ${pos} -gt 0 ]; then
+            expr substr "${good_names}" 1 ${pos} | wc -w | tr -d "[:space:]"
+        else
+            echo ${UNKNOWN_NAME_WEIGHT}
+        fi
+    else
+        echo ${UNKNOWN_NAME_WEIGHT}
+    fi
+fi
+return ${status}
+}
+HAS_FCS_WEIGHT=0
+HAS_ODD_FCS_WEIGHT=1
+HAS_RC_WEIGHT=100
+HAS_ODD_RC_WEIGHT=101
+HAS_BETA_WEIGHT=300
+HAS_ODD_BETA_WEIGHT=301
+HAS_EA_WEIGHT=500
+HAS_ODD_EA_WEIGHT=501
+HAS_INTRNAL_WEIGHT=2000
+HAS_VERY_ODD_WEIGHT=9999
+get_non_fcs_weight() {
+status=0
+if [ $# -eq 0 ]; then
+    read non_fcs_part remainder
+    status=$?
+    if [ ${status} -ne 0 ]; then
+        printf "Error(${status}: failed to read!\n"         >> /dev/stderr
+        status=${PRS_ERROR_BAD_PARAMS}
+    elif [ -n "${remainder}" ]; then
+        printf "Error: too many words read:\n\n"            >> /dev/stderr
+        printf "\t${non_fcs_part} ${remainder}\n"           >> /dev/stderr
+        status=${PRS_ERROR_BAD_PARAMS}
+    fi
+elif [ $# -eq 1 ]; then
+    non_fcs_part=$1
+else
+    printf "Error: usage - function takes 1 parameter:\n\n" >> /dev/stderr
+    printf "\t get_non_fcs_weight $*\n"                     >> /dev/stderr
+    status=${PRS_ERROR_BAD_PARAMS}
+fi
+if [ ${status} -eq 0 ]; then
+    if [ -z "${non_fcs_part}" ]; then
+        echo ${HAS_FCS_WEIGHT}
+    else
+        case "${non_fcs_part}" in
+            fcs)
+                echo ${HAS_ODD_FCS_WEIGHT}
+                ;;
+            rc)
+                echo ${HAS_RC_WEIGHT}
+                ;;
+            rc[0-9] | rc[0-9][0-9])
+                count=`expr "${non_fcs_part}" : "rc\([0-9]*\)$"`
+                echo `expr ${HAS_RC_WEIGHT} - ${count}`
+                ;;
+            rc*)
+                echo ${HAS_ODD_RC_WEIGHT}
+                ;;
+            beta)
+                echo ${HAS_BETA_WEIGHT}
+                ;;
+            beta[0-9] | beta[0-9][0-9])
+                count=`expr "${non_fcs_part}" : "beta\([0-9]*\)$"`
+                echo `expr ${HAS_BETA_WEIGHT} - ${count}`
+                ;;
+            beta*)
+                echo ${HAS_ODD_BETA_WEIGHT}
+                ;;
+            ea)
+                echo ${HAS_EA_WEIGHT}
+                ;;
+            ea[0-9] | ea[0-9][0-9])
+                count=`expr "${non_fcs_part}" : "ea\([0-9]*\)$"`
+                echo `expr ${HAS_EA_WEIGHT} - ${count}`
+                ;;
+            ea*)
+                echo ${HAS_ODD_EA_WEIGHT}
+                ;;
+            internal)
+                echo ${HAS_INTRNAL_WEIGHT}
+                ;;
+            internal[0-9] | internal[0-9][0-9] | internal[0-9][0-9][0-9])
+                count=`expr "${non_fcs_part}" : "internal\([0-9]*\)$"`
+                echo `expr ${HAS_INTRNAL_WEIGHT} - ${count}`
+                ;;
+            b[0-9] | b[0-9][0-9] | b[0-9][0-9][0-9])
+                count=`expr "${non_fcs_part}" : "b\([0-9]*\)$"`
+                echo `expr ${HAS_INTRNAL_WEIGHT} - ${count}`
+                ;;
+            *)
+                echo ${HAS_VERY_ODD_WEIGHT}
+                ;;
+        esac
+    fi
+fi
+return ${status}
+}
+get_path_weight() {
+good_list="$1"
+path=$2
+release=`basename ${path}`
+parts="`parse_release ${release}`"
+if [ $? -eq 0 ]; then
+    name=`echo "${parts}" | cut -f1`
+    version=`echo "${parts}" | cut -f2`
+    non_fcs=`echo "${parts}" | cut -f3`
+    if [ -n "${version}" ]; then
+       v_weight=`echo ${version} | expand_version`
+       n_weight=`echo ${name} | get_name_weight - "${good_list}"`
+       o_weight=`echo ${non_fcs} | get_non_fcs_weight`
+       printf "%4d  %4d  %4d  %4d  %4d  %4d  %s\n" \
+              ${v_weight} ${n_weight} ${o_weight} "${path}"
+    fi
+fi
+}
+get_weighted_list() {
+good_list=
+verify=
+stdio=
+status=0
+check=true
+while [ -n "${check}" ]; do
+    if [ $# -gt 0 ]; then
+        case "$1" in
+            -g)
+                good_list="$2"
+                shift 2
+                ;;
+            --good-list=*)
+                length=`expr length "$1"`
+                remove=`expr \( length "--good-list=" \) + 1`
+                good_list="`expr substr \"$1\" ${remove} ${length}`"
+                shift 1
+                ;;
+            -v | --verify)
+                verify=true
+                shift 1
+                ;;
+            --)
+                shift 1
+                check=
+                ;;
+            -)
+                shift 1
+                stdio=true
+                ;;
+            -*)
+                printf "Error: usage - unknown parameter:\n\n" \
+                                                            >> /dev/stderr
+                printf "\t%s : %s\n" "$1" "$*"              >> /dev/stderr
+                status=${PRS_ERROR_BAD_PARAMS}
+                check=
+                ;;
+            *)
+                check=
+                ;;
+        esac
+    else
+        check=
+    fi
+done
+if [ $# -eq 0 ] || [ -n "${stdio}" ]; then
+    read line
+    while [ -n "${line}" ]; do
+        if [ -z "${verify}" ] || [ -f ${line}/bin/java ]; then
+            get_path_weight "${good_list}" ${line}
+        fi
+        read line
+    done
+fi
+while [ $# -gt 0 ]; do
+    if [ -z "${verify}" ] || [ -f $1/bin/java ]; then
+        get_path_weight "${good_list}" $1
+    fi
+    shift 1
+done
+return ${status}
+}
+_compare_java_by_weight() {
+compare=0
+if [ $# -ne 0 ]; then
+    if [ $# -eq 1 ]; then
+        compare=1
+    else
+        left=$1
+        right=$2
+        shift 2
+        good="$*"
+        list=`get_weighted_list --good-list="${good}" \
+                ${left} ${right} | sort -u -k1n -k2n -k3n -k4n -k5rn -k6rn`
+        if [ `echo "${list}" | wc -l | tr -d "[:space:]"` -ne 1 ]; then
+            compare=-1
+            latest=`echo "${list}" | tail -n 1 | cut -c 37-`
+            if [ "${left}" = "${latest}" ]; then
+                compare=1
+            fi
+        fi
+    fi
+fi
+echo ${compare}
+}
+compare_java_by_version() {
+_compare_java_by_weight $1 $2
+}
+compare_java_by_release() {
+_compare_java_by_weight $1 $2 ${KNOWN_GOOD_NAME_LIST}
+}
+find_latest_release() {
+if [ -d <%= node['java']['oracle']['config']['app_dir'] %> ]; then
+    latest_release=`find <%= node['java']['oracle']['config']['app_dir'] %>/* -prune | \
+        get_weighted_list -v --good-list="${KNOWN_GOOD_NAME_LIST}" | \
+        sort -k1n -k2n -k3n -k4n -k5rn -k6rn | tail -n 1 | cut -c 37-`
+fi
+if [ -d "${RPM_INSTALL_PREFIX}" ] && \
+   [ "<%= node['java']['oracle']['config']['app_dir'] %>" != "${RPM_INSTALL_PREFIX}" ]
+then
+    prefix_release=`find ${RPM_INSTALL_PREFIX}/* -prune | \
+        get_weighted_list -v --good-list="${KNOWN_GOOD_NAME_LIST}" | \
+        sort -k1n -k2n -k3n -k4n -k5rn -k6rn | tail -n 1 | cut -c 37-`
+    if [ `compare_java_by_release ${latest_release} ${prefix_release}` -lt 0 ]; then
+        latest_release=${prefix_release}
+    fi
+fi
+echo ${latest_release}
+}
+get_javaws() {
+path=$1
+if [ `compare_java_by_version ${path} version-1.5.0` -ge 0 ] &&
+   [ -f ${path}/bin/javaws ]
+then
+    path=${path}/bin/javaws
+elif [ `compare_java_by_version ${path} version-1.4.2` -ge 0 ]; then
+    if [ -f ${path}/jre/javaws/javaws ]; then
+        path=${path}/jre/javaws/javaws
+    elif [ -f ${path}/javaws/javaws ]; then
+        path=${path}/javaws/javaws
+    else
+        path=
+    fi
+else
+    path=
+fi
+echo ${path}
+}
+LINK_ERROR_BAD_PARAMS=3000
+LINK_ERROR_DEAD_LINK=3001
+LINK_ERROR_FILE_NOT_FOUND=3002
+dereference() {
+status=0
+if [ "$1" = "-f" ] || [ "$1" = "--follow" ]; then
+    follow="--follow"
+    shift 1
+fi
+if [ $# -ge 1 ]; then
+    path="$*"
+    if [ -e "${path}" ]; then
+        parent="`cd \`dirname \"${path}\"\`; pwd`"
+        child="`basename \"${path}\"`"
+        if [ "${parent}" != "${child}" ]; then
+            path="${parent}/${child}"
+        fi
+        if [ -h "${path}" ]; then
+            path=`ls -l "${path}" | sed -e "s#^.*${path} -> ##"`
+            if [ "`expr substr \"${path}\" 1 1`" != "/" ]; then
+                path="${parent}/${path}"
+            fi
+            if [ -n "${follow}" ]; then
+                path="`dereference ${follow} ${path}`"
+            fi
+        fi
+    else
+        status=${LINK_ERROR_FILE_NOT_FOUND}
+    fi
+fi
+echo ${path}
+return ${status}
+}
+setup_latest_link() {
+latest=$1
+link=$2
+if [ -h "${link}" ]; then
+    reference="`dereference --follow ${link}`"
+    if [ $? -eq 0 ]; then
+        update=`compare_java_by_release "${latest}" "${reference}"`
+    else
+        update=1
+    fi
+    if [ ${update} -gt 0 ]; then
+        rm -f "${link}"
+    fi
+fi
+if [ ! -e "${link}" ]; then
+    ln -s "${latest}" "${link}"
+fi
+}
+setup_default_links() {
+if [ $# -ge 2 ]; then
+    latest_link="$1"
+    default_link="$2"
+    if [ ! -e "${default_link}" ]; then
+        ln -s "${latest_link}" "${default_link}"
+    fi
+fi
+if [ $# -gt 3 ]; then
+    bindir="$3"
+    shift 3
+    for file in $*; do
+        reference="`dereference --follow ${bindir}/${file}`"
+        if [ $? -ne 0 ]; then
+            rm -f "${bindir}/${file}"
+        fi
+        source="${default_link}/bin/${file}"
+        if [ "${file}" = "javaws" ]; then
+            source="`get_javaws \"${default_link}\"`"
+        fi
+        if [ -n "${source}" ] && [ ! -e "${bindir}/${file}" ]; then
+            ln -s "${source}" "${bindir}/${file}"
+        fi
+    done
+fi
+}
+cleanup_default_links() {
+if [ $# -ge 1 ]; then
+    default_link=$1
+    if [ $# -gt 2 ]; then
+        bindir="$2"
+        shift 2
+        for file in $*; do
+            reference="`dereference \"${bindir}/${file}\"`"
+            if [ $? -ne 0 ] ||
+               [ "${reference}" = "${default_link}/bin/${file}" ]
+            then
+                rm -f "${bindir}/${file}"
+            fi
+        done
+    fi
+    rm -f "${default_link}"
+fi
+}
+alt_install_java() {
+priority=$1
+jrebindir=$2
+jremandir=$3
+/usr/sbin/alternatives --install \
+/usr/bin/java java $jrebindir/java $priority \
+--slave /usr/bin/ControlPanel ControlPanel $jrebindir/ControlPanel --slave /usr/bin/javaws javaws $jrebindir/javaws --slave /usr/bin/jcontrol jcontrol $jrebindir/jcontrol --slave /usr/bin/jjs jjs $jrebindir/jjs --slave /usr/bin/keytool keytool $jrebindir/keytool --slave /usr/bin/orbd orbd $jrebindir/orbd --slave /usr/bin/pack200 pack200 $jrebindir/pack200 --slave /usr/bin/policytool policytool $jrebindir/policytool --slave /usr/bin/rmid rmid $jrebindir/rmid --slave /usr/bin/rmiregistry rmiregistry $jrebindir/rmiregistry --slave /usr/bin/servertool servertool $jrebindir/servertool --slave /usr/bin/tnameserv tnameserv $jrebindir/tnameserv --slave /usr/bin/unpack200 unpack200 $jrebindir/unpack200 --slave /usr/share/man/man1/java.1 java.1 $jremandir/java.1 --slave /usr/share/man/man1/javaws.1 javaws.1 $jremandir/javaws.1 --slave /usr/share/man/man1/jjs.1 jjs.1 $jremandir/jjs.1 --slave /usr/share/man/man1/keytool.1 keytool.1 $jremandir/keytool.1 --slave /usr/share/man/man1/orbd.1 orbd.1 $jremandir/orbd.1 --slave /usr/share/man/man1/pack200.1 pack200.1 $jremandir/pack200.1 --slave /usr/share/man/man1/policytool.1 policytool.1 $jremandir/policytool.1 --slave /usr/share/man/man1/rmid.1 rmid.1 $jremandir/rmid.1 --slave /usr/share/man/man1/rmiregistry.1 rmiregistry.1 $jremandir/rmiregistry.1 --slave /usr/share/man/man1/servertool.1 servertool.1 $jremandir/servertool.1 --slave /usr/share/man/man1/tnameserv.1 tnameserv.1 $jremandir/tnameserv.1 --slave /usr/share/man/man1/unpack200.1 unpack200.1 $jremandir/unpack200.1
+}
+alt_remove_java() {
+jrebindir=$1
+/usr/sbin/alternatives --remove java $jrebindir/java
+}
+alt_install_javac() {
+priority=$1
+jdkbindir=$2
+jdkmandir=$3
+/usr/sbin/alternatives --install \
+/usr/bin/javac javac $jdkbindir/javac $priority \
+--slave /usr/bin/ControlPanel ControlPanel $jdkbindir/ControlPanel --slave /usr/bin/appletviewer appletviewer $jdkbindir/appletviewer --slave /usr/bin/extcheck extcheck $jdkbindir/extcheck --slave /usr/bin/idlj idlj $jdkbindir/idlj --slave /usr/bin/jar jar $jdkbindir/jar --slave /usr/bin/jarsigner jarsigner $jdkbindir/jarsigner --slave /usr/bin/java-rmi.cgi java-rmi.cgi $jdkbindir/java-rmi.cgi --slave /usr/bin/javadoc javadoc $jdkbindir/javadoc --slave /usr/bin/javafxpackager javafxpackager $jdkbindir/javafxpackager --slave /usr/bin/javah javah $jdkbindir/javah --slave /usr/bin/javap javap $jdkbindir/javap --slave /usr/bin/javapackager javapackager $jdkbindir/javapackager --slave /usr/bin/javaws javaws $jdkbindir/javaws --slave /usr/bin/jcmd jcmd $jdkbindir/jcmd --slave /usr/bin/jconsole jconsole $jdkbindir/jconsole --slave /usr/bin/jcontrol jcontrol $jdkbindir/jcontrol --slave /usr/bin/jdb jdb $jdkbindir/jdb --slave /usr/bin/jdeps jdeps $jdkbindir/jdeps --slave /usr/bin/jhat jhat $jdkbindir/jhat --slave /usr/bin/jinfo jinfo $jdkbindir/jinfo --slave /usr/bin/jjs jjs $jdkbindir/jjs --slave /usr/bin/jmap jmap $jdkbindir/jmap --slave /usr/bin/jmc jmc $jdkbindir/jmc --slave /usr/bin/jmc.ini jmc.ini $jdkbindir/jmc.ini --slave /usr/bin/jps jps $jdkbindir/jps --slave /usr/bin/jrunscript jrunscript $jdkbindir/jrunscript --slave /usr/bin/jsadebugd jsadebugd $jdkbindir/jsadebugd --slave /usr/bin/jstack jstack $jdkbindir/jstack --slave /usr/bin/jstat jstat $jdkbindir/jstat --slave /usr/bin/jstatd jstatd $jdkbindir/jstatd --slave /usr/bin/jvisualvm jvisualvm $jdkbindir/jvisualvm --slave /usr/bin/keytool keytool $jdkbindir/keytool --slave /usr/bin/native2ascii native2ascii $jdkbindir/native2ascii --slave /usr/bin/orbd orbd $jdkbindir/orbd --slave /usr/bin/pack200 pack200 $jdkbindir/pack200 --slave /usr/bin/policytool policytool $jdkbindir/policytool --slave /usr/bin/rmic rmic $jdkbindir/rmic --slave /usr/bin/rmid rmid $jdkbindir/rmid --slave /usr/bin/rmiregistry rmiregistry $jdkbindir/rmiregistry --slave /usr/bin/schemagen schemagen $jdkbindir/schemagen --slave /usr/bin/serialver serialver $jdkbindir/serialver --slave /usr/bin/servertool servertool $jdkbindir/servertool --slave /usr/bin/tnameserv tnameserv $jdkbindir/tnameserv --slave /usr/bin/unpack200 unpack200 $jdkbindir/unpack200 --slave /usr/bin/wsgen wsgen $jdkbindir/wsgen --slave /usr/bin/wsimport wsimport $jdkbindir/wsimport --slave /usr/bin/xjc xjc $jdkbindir/xjc --slave /usr/share/man/man1/appletviewer.1 appletviewer.1 $jdkmandir/appletviewer.1 --slave /usr/share/man/man1/extcheck.1 extcheck.1 $jdkmandir/extcheck.1 --slave /usr/share/man/man1/idlj.1 idlj.1 $jdkmandir/idlj.1 --slave /usr/share/man/man1/jar.1 jar.1 $jdkmandir/jar.1 --slave /usr/share/man/man1/jarsigner.1 jarsigner.1 $jdkmandir/jarsigner.1 --slave /usr/share/man/man1/java.1 java.1 $jdkmandir/java.1 --slave /usr/share/man/man1/javac.1 javac.1 $jdkmandir/javac.1 --slave /usr/share/man/man1/javadoc.1 javadoc.1 $jdkmandir/javadoc.1 --slave /usr/share/man/man1/javafxpackager.1 javafxpackager.1 $jdkmandir/javafxpackager.1 --slave /usr/share/man/man1/javah.1 javah.1 $jdkmandir/javah.1 --slave /usr/share/man/man1/javap.1 javap.1 $jdkmandir/javap.1 --slave /usr/share/man/man1/javapackager.1 javapackager.1 $jdkmandir/javapackager.1 --slave /usr/share/man/man1/javaws.1 javaws.1 $jdkmandir/javaws.1 --slave /usr/share/man/man1/jcmd.1 jcmd.1 $jdkmandir/jcmd.1 --slave /usr/share/man/man1/jconsole.1 jconsole.1 $jdkmandir/jconsole.1 --slave /usr/share/man/man1/jdb.1 jdb.1 $jdkmandir/jdb.1 --slave /usr/share/man/man1/jdeps.1 jdeps.1 $jdkmandir/jdeps.1 --slave /usr/share/man/man1/jhat.1 jhat.1 $jdkmandir/jhat.1 --slave /usr/share/man/man1/jinfo.1 jinfo.1 $jdkmandir/jinfo.1 --slave /usr/share/man/man1/jjs.1 jjs.1 $jdkmandir/jjs.1 --slave /usr/share/man/man1/jmap.1 jmap.1 $jdkmandir/jmap.1 --slave /usr/share/man/man1/jmc.1 jmc.1 $jdkmandir/jmc.1 --slave /usr/share/man/man1/jps.1 jps.1 $jdkmandir/jps.1 --slave /usr/share/man/man1/jrunscript.1 jrunscript.1 $jdkmandir/jrunscript.1 --slave /usr/share/man/man1/jsadebugd.1 jsadebugd.1 $jdkmandir/jsadebugd.1 --slave /usr/share/man/man1/jstack.1 jstack.1 $jdkmandir/jstack.1 --slave /usr/share/man/man1/jstat.1 jstat.1 $jdkmandir/jstat.1 --slave /usr/share/man/man1/jstatd.1 jstatd.1 $jdkmandir/jstatd.1 --slave /usr/share/man/man1/jvisualvm.1 jvisualvm.1 $jdkmandir/jvisualvm.1 --slave /usr/share/man/man1/keytool.1 keytool.1 $jdkmandir/keytool.1 --slave /usr/share/man/man1/native2ascii.1 native2ascii.1 $jdkmandir/native2ascii.1 --slave /usr/share/man/man1/orbd.1 orbd.1 $jdkmandir/orbd.1 --slave /usr/share/man/man1/pack200.1 pack200.1 $jdkmandir/pack200.1 --slave /usr/share/man/man1/policytool.1 policytool.1 $jdkmandir/policytool.1 --slave /usr/share/man/man1/rmic.1 rmic.1 $jdkmandir/rmic.1 --slave /usr/share/man/man1/rmid.1 rmid.1 $jdkmandir/rmid.1 --slave /usr/share/man/man1/rmiregistry.1 rmiregistry.1 $jdkmandir/rmiregistry.1 --slave /usr/share/man/man1/schemagen.1 schemagen.1 $jdkmandir/schemagen.1 --slave /usr/share/man/man1/serialver.1 serialver.1 $jdkmandir/serialver.1 --slave /usr/share/man/man1/servertool.1 servertool.1 $jdkmandir/servertool.1 --slave /usr/share/man/man1/tnameserv.1 tnameserv.1 $jdkmandir/tnameserv.1 --slave /usr/share/man/man1/unpack200.1 unpack200.1 $jdkmandir/unpack200.1 --slave /usr/share/man/man1/wsgen.1 wsgen.1 $jdkmandir/wsgen.1 --slave /usr/share/man/man1/wsimport.1 wsimport.1 $jdkmandir/wsimport.1 --slave /usr/share/man/man1/xjc.1 xjc.1 $jdkmandir/xjc.1
+}
+alt_remove_javac() {
+jdkbindir=$1
+/usr/sbin/alternatives --remove javac $jdkbindir/javac
+}
+
+#
+# Unpack the packed JAR files.
+#
+unpack_jars "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>/bin/unpack200" \
+            "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>" \
+            lib/tools.jar jre/lib/plugin.jar jre/lib/javaws.jar jre/lib/deploy.jar jre/lib/rt.jar jre/lib/jsse.jar jre/lib/charsets.jar jre/lib/ext/localedata.jar
+
+
+#
+# Find out what version of Java is the latest.  Don't do any system
+# integration unless this is the latest version.  Otherwise, we make it
+# difficult for future installers.
+#
+LATEST_JAVA_PATH="`find_latest_release`"
+if [ "${LATEST_JAVA_PATH}" == "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>" ] ||
+   [ "${LATEST_JAVA_PATH}" == "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>" ]
+then
+    #
+    # Make sure the <%= node['java']['oracle']['config']['app_dir'] %>/latest link points to LATEST_JAVA_PATH, and
+# update it if it doesn't.
+    #
+    setup_latest_link "${LATEST_JAVA_PATH}" "<%= node['java']['oracle']['config']['app_dir'] %>/latest"
+
+    #
+    # Make sure the <%= node['java']['oracle']['config']['app_dir'] %>/default and java javaws jcontrol javac jar javadoc exist.
+# If anything is missing, create it.
+    #
+    setup_default_links "<%= node['java']['oracle']['config']['app_dir'] %>/latest" "<%= node['java']['oracle']['config']['app_dir'] %>/default" \
+                        "/usr/bin" java javaws jcontrol javac jar javadoc
+
+    #
+    # If the "latest" link is a JDK, then the latest JRE is a subdir;
+# otherwise it is the same dir.
+    #
+    DEFAULT_JRE_PATH="<%= node['java']['oracle']['config']['app_dir'] %>/default"
+    if [ -e "<%= node['java']['oracle']['config']['app_dir'] %>/default/jre/bin/java" ]; then
+        DEFAULT_JRE_PATH="<%= node['java']['oracle']['config']['app_dir'] %>/default/jre"
+    fi
+
+fi
+
+#
+# If the package is being relocated, then create a link in the default
+# location (<%= node['java']['oracle']['config']['app_dir'] %>) to the actual install directory.  Do this
+# last, so it doesn't add unnecessary complexity to the search for the
+# latest release.
+#
+if [ "${RPM_INSTALL_PREFIX}" != "<%= node['java']['oracle']['config']['app_dir'] %>" ] &&
+   ( [ ! -e "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>" ] || [ -h "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>" ] )
+then
+    rm -f "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>"
+    ln -s "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>" "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>"
+fi
+
+if [ ! -f "/etc/.java/" ]
+then
+mkdir -p "/etc/.java/"
+ln -s "<%= node['java']['oracle']['config']['app_dir'] %>/latest/.java/.systemPrefs" "/etc/.java/" 2> /dev/null
+fi
+
+if [ ! -f "/etc/init.d/jexec" ]
+then
+ln -s "<%= node['java']['oracle']['config']['app_dir'] %>/latest/.java/init.d/jexec" "/etc/init.d" 2> /dev/null
+fi
+
+#
+# Next, make sure the files required for the Prferences API are setup
+# correctly.  Any files from an old, uninstalled version will have left
+# files with a .rpmsave extension.  If there was an older version currently
+# installed when this version installed, there will be a set of files with
+# a .rpmnew extension.  Try to use the best possible file (i.e. save old
+# preference settings).
+#
+if [ -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmsave ] &&
+   [ ! -s <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock ]
+then
+    #
+    # Only overwrite if old file is empty (rpmsave is only created if it is
+    # non-empty).
+    #
+    rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock
+    mv <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmsave \
+       <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock
+elif [ -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmnew ]
+then
+    if [ -s <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock ]; then
+        #
+        # The existing lock is non-empty, so there is no reason to keep the
+        # .rpmnew one created during this install.
+        #
+        rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmnew
+    else
+        #
+        # The existing lock is empty, so replace it with the new one.  This
+        # makes future installs a little cleaner, since the file in use is
+        # the file in the RPM database.
+        #
+        rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock
+        mv <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmnew \
+           <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock
+    fi
+fi
+
+if [ -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmsave ] &&
+   [ ! -s <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile ]
+then
+    #
+    # Only overwrite if old file is empty (rpmsave is only created if it is
+    # non-empty).
+    #
+    rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
+    mv <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmsave \
+       <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
+elif [ -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmnew ]
+then
+    if [ -s <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile ]; then
+        #
+        # The existing lock is non-empty, so there is no reason to keep the
+        # .rpmnew one created during this install.
+        #
+        rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmnew
+    else
+        #
+        # The existing lock is empty, so replace it with the new one.  This
+        # makes future installs a little cleaner, since the file in use is
+        # the file in the RPM database.
+        #
+        rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
+        mv <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmnew \
+           <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
+    fi
+fi
+
+#
+# Try to register the init script to the various run levels.  If possible
+# this is accomplished using an LSB defined install tool.  If that isn't
+# available, then try to use chkconfig, which is supported by Red Hat and
+# Debian.  The feature of automatic jar file execution is not support on
+# systems which don't support either of these interfaces.
+#
+if [ -x /usr/lib/lsb/install_initd ]; then
+    /usr/lib/lsb/install_initd jexec > /dev/null 2>&1
+
+    # start the service for the current session
+    <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
+elif [ -x /sbin/chkconfig ]; then
+    /sbin/chkconfig --add jexec > /dev/null 2>&1
+
+    # start the service for the current session
+    <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
+fi
+if [ -f "${INSTALL_JRE_PATH}/lib/javasettings" ]; then
+    ${INSTALL_JRE_PATH}/lib/javasettings 2> /var/log/java_install.log
+# Remove it when run.
+rm ${INSTALL_JRE_PATH}/lib/javasettings
+fi
+# Set web java and security level settings using install.jar and remove it
+if [ -f "${INSTALL_JRE_PATH}/lib/install.jar" ]; then
+CONFIG_FILE="/etc/Oracle/Java/java.settings.cfg"
+    if [ -f ${CONFIG_FILE} ]; then
+        ${INSTALL_JRE_PATH}/bin/java -cp .:${INSTALL_JRE_PATH}/lib/deploy.jar:${INSTALL_JRE_PATH}/lib/install.jar com.oracle.install.InstallOptions -f ${CONFIG_FILE} 2>> /var/log/java_install.log
+    fi
+# Remove it when run.
+rm ${INSTALL_JRE_PATH}/lib/install.jar
+fi
+#
+# Register alternatives for java for jre and javac for jdk
+#
+if [ 1 = 1 ]; then
+    INSTALL_JDK_PATH=${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>
+     alt_install_java <%= node['java']['oracle']['config']['alt_priority'] %> "${INSTALL_JDK_PATH}/jre/bin" "${INSTALL_JDK_PATH}/man/man1"
+    alt_install_javac <%= node['java']['oracle']['config']['alt_priority'] %> "${INSTALL_JDK_PATH}/bin" "${INSTALL_JDK_PATH}/man/man1"
+else
+     alt_install_java <%= node['java']['oracle']['config']['alt_priority'] %> "${INSTALL_JRE_PATH}/bin" "${INSTALL_JRE_PATH}/man/man1"
+fi
