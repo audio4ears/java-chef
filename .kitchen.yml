@@ -3,15 +3,18 @@ driver:
   name: vagrant
 
 provisioner:
-  name: chef_zero
+  product_name: chef
+  product_version: latest
+  channel: stable
+  install_strategy: once
   always_update_cookbooks: true
-  require_chef_omnibus: 13.1.31
+  log_level: info
 
 verifier:
   name: inspec
 
 platforms:
-  - name: centos-7.3
+  - name: centos-7.4
 
 suites:
   - name: default
@@ -27,3 +30,6 @@ suites:
       inspec_tests:
         - test/smoke/default
     attributes:
+      java:
+        install_from: 'oracle_source'
+        install_version: 'jdk-8u172-linux-x64'
