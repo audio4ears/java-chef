@@ -1,10 +1,10 @@
 name 'java-chef'
-maintainer 'The Authors'
-maintainer_email 'you@example.com'
-license 'All Rights Reserved'
+maintainer 'Ryan Hansohn'
+maintainer_email 'info@imnorobot.com'
+license 'MIT'
 description 'Installs/Configures java-chef'
 long_description 'Installs/Configures java-chef'
-version '0.1.0'
+version '0.2.0'
 chef_version '>= 12.1' if respond_to?(:chef_version)
 
 # The `issues_url` points to the location where issues for this cookbook are
