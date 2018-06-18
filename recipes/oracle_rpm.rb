@@ -4,7 +4,6 @@
 #
 # Copyright:: 2017, The Authors, All Rights Reserved.
 
-
 # create application directories
 directory "make_#{node['java']['oracle']['config']['app_dir']}" do
   path node['java']['oracle']['config']['app_dir']
@@ -14,7 +13,6 @@ directory "make_#{node['java']['oracle']['config']['app_dir']}/tmp" do
   path "#{node['java']['oracle']['config']['app_dir']}/tmp"
   recursive true
 end
-
 
 # download and install source
 # install
@@ -31,5 +29,5 @@ bash "download_#{node['java']['install_version']}" do
   cwd "#{node['java']['oracle']['config']['app_dir']}/tmp"
   action :run
   notifies :run, "bash[install_#{node['java']['install_version']}]", :immediately
-  not_if  { File.exist?("#{node['java']['oracle']['config']['app_dir']}/tmp/#{node['java']['oracle']['url'].split('/')[-1]}") }
+  not_if { File.exist?("#{node['java']['oracle']['config']['app_dir']}/tmp/#{node['java']['oracle']['url'].split('/')[-1]}") }
 end

@@ -4,7 +4,6 @@
 #
 # Copyright:: 2017, The Authors, All Rights Reserved.
 
-
 # install java
 case node['java']['install_from']
 when 'openjdk_package'
