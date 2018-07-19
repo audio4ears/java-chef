@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - no new features in development at this time
 
+## [1.1.0](https://github.com/hansohn/java-chef/compare/1.0.0...1.1.0) (Jul 19, 2018)
+
+FEATURES:
+
+- update licenses
+
 ## [1.0.0](https://github.com/hansohn/java-chef/compare/0.2.0...1.0.0) (Jul 18, 2018)
 
 FEATURES:
