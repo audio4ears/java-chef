@@ -4,7 +4,7 @@
 #
 # Copyright:: 2017, The Authors, All Rights Reserved.
 
-# install openjdk from repo
+# install oracle package from repo
 package 'install_oracle_package' do
   package_name node['java']['oracle']['package']
   version node['java']['oracle']['package_version']
