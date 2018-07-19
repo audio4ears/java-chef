@@ -60,7 +60,7 @@ Update berksfile to include the cookbook from github
 
 ```ruby
 # add cookbook from github
-cookbook "java-chef", "~> 0.2.0", git: "https://github.com/hansohn/java-chef.git"
+cookbook "java-chef", "~> 1.0.0", git: "https://github.com/hansohn/java-chef.git"
 ```
 
 #### Step 2: Metadata.rb
