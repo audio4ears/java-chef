@@ -5,7 +5,6 @@
 # The Inspec reference, with examples and extensive documentation, can be
 # found at http://inspec.io/docs/reference/resources/
 
-
 control 'java-chef::oracle_source' do
   title 'Testing java source installation'
 

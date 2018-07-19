@@ -1,29 +1,36 @@
 ---
 driver:
-  name: vagrant
+  name: dokken
+  chef_version: latest
+  privileged: true
+
+transport:
+  name: dokken
 
 provisioner:
+  name: dokken
   product_name: chef
   product_version: latest
   channel: stable
   install_strategy: once
   always_update_cookbooks: true
-  #log_level: info
+  log_level: info
 
 verifier:
   name: inspec
 
 platforms:
-  - name: centos-7.5
+  - name: centos-7
+    driver:
+      platform: rhel
+      pid_one_command: /usr/lib/systemd/systemd
+      intermediate_instructions:
+        - RUN yum -y install lsof which systemd-sysv initscripts wget net-tools sudo
 
 suites:
   - name: default
     driver:
-      vm_hostname: java
-      customize:
-        memory: 512
-        cpus: 1
-        natdnshostresolver1: "on"
+      hostname: java
     run_list:
       - recipe[java-chef::install]
     verifier:
