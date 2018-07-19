@@ -43,7 +43,7 @@ when ['oracle_source', 'jdk-8u181-linux-x64']
 # openjdk
 when ['openjdk_package', 'java-1.8.0-openjdk-devel']
   default['java']['openjdk']['package'] = 'java-1.8.0-openjdk-devel'
-  default['java']['openjdk']['package_version'] = '1.8.0.171-7.b10.el7'
+  default['java']['openjdk']['package_version'] = '1.8.0.171-8.b10.el7_5'
 end
 default['java']['oracle']['config']['app_dir'] = '/usr/java'
 default['java']['oracle']['config']['dl_options'] = '-b oraclelicense=accept-securebackup-cookie -L -s'
