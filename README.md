@@ -1,5 +1,7 @@
 # java-chef
 
+[![Build Status](https://travis-ci.org/hansohn/java-chef.svg?branch=master)](https://travis-ci.org/hansohn/java-chef) [![GitHub tag](https://img.shields.io/github/tag/hansohn/java-chef.svg)](https://github.com/hansohn/java-chef)
+
 This cookbook installs [Java SE Development Kit](https://www.oracle.com/java/index.html), which is typically utilized to satisfy the Java prerequisite for other applications.
 
 ### Why another Java Cookbook?
@@ -8,19 +10,19 @@ There is a problem with Oracle and OpenJDK Java distributions competing for Linu
 
 ```bash
 # EXAMPLE - default behavior
-# Java SE Development Kit 8u172
-- oracle alternatives priority = 180172
-- openjdk alternatives priority = 1800172
+# Java SE Development Kit 8u181
+- oracle alternatives priority = 180181
+- openjdk alternatives priority = 1800181
 ```
 
 This behavior causes problems when you have Oracle Java installed and another package blindly installs OpenJDK as one of its prerequisites. To mitigate this issue I created a cookbook that follows the same priority schema as Oracle and OpenJDK but adds an additional `0` to the priority to guarantee use.
 
 ```bash
 # EXAMPLE - modified behavior
-# Java SE Development Kit 8u172
-- oracle alternatives priority = 180172
-- openjdk alternatives priority = 1800172
-- java-chef alternatives priority = 18000172
+# Java SE Development Kit 8u181
+- oracle alternatives priority = 180181
+- openjdk alternatives priority = 1800181
+- java-chef alternatives priority = 18000181
 ```
 
 ### Java Flavors
@@ -35,15 +37,15 @@ Java flavors can be selected by adding the following key/values to your attribut
 ```ruby
 # oracle_package
 node['java']['install_from'] = 'oracle_package'
-node['java']['install_version'] = 'jdk-8u172-linux-x64'
+node['java']['install_version'] = 'jdk-8u181-linux-x64'
 
 # oracle_rpm
 node['java']['install_from'] = 'oracle_rpm'
-node['java']['install_version'] = 'jdk-8u172-linux-x64'
+node['java']['install_version'] = 'jdk-8u181-linux-x64'
 
 # oracle_source
 node['java']['install_from'] = 'oracle_source'
-node['java']['install_version'] = 'jdk-8u172-linux-x64'
+node['java']['install_version'] = 'jdk-8u181-linux-x64'
 
 # openjdk_package
 node['java']['install_from'] = 'openjdk_package'
@@ -86,5 +88,5 @@ Define version on java to be installed in your attributes file
 ```ruby
 # install oracle from source
 node['java']['install_from'] = 'oracle_source'
-node['java']['install_version'] = 'jdk-8u172-linux-x64'
+node['java']['install_version'] = 'jdk-8u181-linux-x64'
 ```

@@ -6,7 +6,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - no new features in development at this time
 
-## [0.2.0](https://github.com/hansohn/java-chef/compare/0.2.0...0.1.0) (Jun 07, 2018)
+## [1.0.0](https://github.com/hansohn/java-chef/compare/0.2.0...1.0.0) (Jul 18, 2018)
+
+FEATURES:
+
+- bump default java versions to 1.8.0_181
+- add travis integration
+- move default recipe functionality to install recipe
+
+## [0.2.0](https://github.com/hansohn/java-chef/compare/0.1.0...0.2.0) (Jun 07, 2018)
 
 FEATURES:
 

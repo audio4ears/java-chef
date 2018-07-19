@@ -1,6 +1,6 @@
 # java
 default['java']['install_from'] = 'oracle_source'
-default['java']['install_version'] = 'jdk-8u172-linux-x64'
+default['java']['install_version'] = 'jdk-8u181-linux-x64'
 case [node['java']['install_from'], node['java']['install_version']]
 # oracle_package
 when ['oracle_package', 'jdk-8u172-linux-x64']
@@ -16,6 +16,9 @@ when ['oracle_rpm', 'jdk-8u131-linux-x64']
 when ['oracle_rpm', 'jdk-8u172-linux-x64']
   default['java']['oracle']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/8u172-b11/a58eab1ec242421181065cdc37240b08/jdk-8u172-linux-x64.rpm'
   default['java']['oracle']['checksum'] = '6a27b5718a5266cc725478d0b2e30fdc9bdb74b4e496971ed0f3b9c334d08163'
+when ['oracle_rpm', 'jdk-8u181-linux-x64']
+  default['java']['oracle']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.rpm'
+  default['java']['oracle']['checksum'] = '48af6afd56252f5e6641fd0ad9009c056ee5d178129b4824cef4b976a655d375'
 # oracle_source
 when ['oracle_source', 'jdk-8u102-linux-x64']
   default['java']['oracle']['config']['extract_dir'] = 'jdk1.8.0_102'
@@ -31,7 +34,12 @@ when ['oracle_source', 'jdk-8u172-linux-x64']
   default['java']['oracle']['config']['extract_dir'] = 'jdk1.8.0_172'
   default['java']['oracle']['config']['alt_priority'] = '18000172'
   default['java']['oracle']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/8u172-b11/a58eab1ec242421181065cdc37240b08/jdk-8u172-linux-x64.tar.gz'
-  default['java']['oracle']['checksum'] = 'sha256=28a00b9400b6913563553e09e8024c286b506d8523334c93ddec6c9ec7e9d346'
+  default['java']['oracle']['checksum'] = '28a00b9400b6913563553e09e8024c286b506d8523334c93ddec6c9ec7e9d346'
+when ['oracle_source', 'jdk-8u181-linux-x64']
+  default['java']['oracle']['config']['extract_dir'] = 'jdk1.8.0_181'
+  default['java']['oracle']['config']['alt_priority'] = '18000181'
+  default['java']['oracle']['url'] = 'http://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.tar.gz'
+  default['java']['oracle']['checksum'] = '1845567095bfbfebd42ed0d09397939796d05456290fb20a83c476ba09f991d3'
 # openjdk
 when ['openjdk_package', 'java-1.8.0-openjdk-devel']
   default['java']['openjdk']['package'] = 'java-1.8.0-openjdk-devel'

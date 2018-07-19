@@ -54,14 +54,14 @@ end
     source "#{script}.erb"
     mode 0755
     action :create
+    sensitive true
     notifies :run, "execute[run_#{node['java']['oracle']['config']['app_dir']}/tmp/#{script}]", :immediately
   end
 end
 
 # create symlinks
 # directory symlinks
-if defined?(node['java']['oracle']['config']['symlinks']) &&
-   !empty?(node['java']['oracle']['config']['symlinks'])
+if defined?(node['java']['oracle']['config']['symlinks'])
   node['java']['oracle']['config']['symlinks'].each do |symlink|
     symlink_file = symlink.split('/')[-1]
     symlink_path = symlink.chomp(symlink_file)
