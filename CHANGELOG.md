@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - no new features in development at this time
 
+## [2.0.0](https://github.com/hansohn/java-chef/compare/1.1.0...2.0.0) (Feb 08, 2019)
+
+FEATURES:
+
+- bump default java versions to 1.8.0_201
+- modidy attribute format
+
 ## [1.1.0](https://github.com/hansohn/java-chef/compare/1.0.0...1.1.0) (Jul 19, 2018)
 
 FEATURES:
