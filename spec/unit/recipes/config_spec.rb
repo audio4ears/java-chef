@@ -2,9 +2,9 @@
 # Cookbook:: java-chef
 # Spec:: default
 #
-# The MIT License (MIT)
+# The MIT License
 #
-# Copyright:: 2018, Ryan Hansohn
+# Copyright (c) 2018 Ryan Hansohn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
