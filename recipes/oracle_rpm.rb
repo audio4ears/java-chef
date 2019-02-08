@@ -39,7 +39,7 @@ java_version = -> { node['java']['install_version'] }
 
 # install
 bash "install_#{java_version.call}" do
-  code "rpm -Uv #{node['java']['setup']['app_dir']}/downloads/#{node['java']['oracle']['url'].split('/')[-1]}"
+  code "rpm -Uv #{node['java']['setup']['app_dir']}/downloads/#{node['java']['oracle_rpm'][java_version.call]['url'].split('/')[-1]}"
   cwd "#{node['java']['setup']['app_dir']}/downloads"
   action :nothing
 end
