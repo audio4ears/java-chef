@@ -1,11 +1,15 @@
 # java
 default['java'] = {
   'install_from' => 'oracle_source',
-  'install_version' => 'jdk-8u181-linux-x64',
+  'install_version' => 'jdk-8u201-linux-x64',
   'oracle_package' => {
     'jdk-8u172-linux-x64' => {
       'package' => 'jdk-8u172-linux-x64',
       'package_version' => 'jdk1.8-1.8.0_172-fcs.x86_64',
+    },
+    'jdk-8u201-linux-x64' => {
+      'package' => 'jdk-8u201-linux-x64',
+      'package_verion' => 'jdk1.8-1.8.0_201-fcs.x86_64',
     },
   },
   'oracle_rpm' => {
@@ -24,6 +28,10 @@ default['java'] = {
     'jdk-8u181-linux-x64' => {
       'url' => 'http://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.rpm',
       'checksum' => '48af6afd56252f5e6641fd0ad9009c056ee5d178129b4824cef4b976a655d375',
+    },
+    'jdk-8u201-linux-x64' => {
+      'url' => 'https://download.oracle.com/otn-pub/java/jdk/8u201-b09/42970487e3af4f5aa5bca3f542482c60/jdk-8u201-linux-x64.rpm',
+      'checksum' => 'fea8044667169dbd843a4c7bd447d46ce0462ff9d87989f1ad36fba81fb79ffa',
     },
   },
   'oracle_source' => {
