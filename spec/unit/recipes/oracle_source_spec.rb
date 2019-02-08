@@ -1,8 +1,8 @@
 #
 # Cookbook:: java-chef
-# Spec:: default
+# Spec:: oracle_source
 #
-# The MIT License (MIT)
+# The MIT License
 #
 # Copyright (c) 2018 Ryan Hansohn
 #

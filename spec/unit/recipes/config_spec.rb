@@ -1,6 +1,6 @@
 #
 # Cookbook:: java-chef
-# Spec:: default
+# Spec:: config
 #
 # The MIT License
 #
