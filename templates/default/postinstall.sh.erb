@@ -25,7 +25,7 @@ fi
 # a Ubuntu) which don't support packages.
 #
 if [ -z "${RPM_INSTALL_PREFIX}" ]; then
-RPM_INSTALL_PREFIX="<%= node['java']['oracle']['config']['app_dir'] %>"
+RPM_INSTALL_PREFIX="<%= node['java']['setup']['app_dir'] %>"
 fi
 
 #
@@ -37,7 +37,7 @@ if [ "${GNOMEDIR}" = "/opt/gnome" ] && [ -d "/opt/gnome2" ]; then
 GNOMEDIR="/opt/gnome2"
 fi
 
-INSTALL_JRE_PATH=${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>
+INSTALL_JRE_PATH=${RPM_INSTALL_PREFIX}/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>
 if [ -e ${INSTALL_JRE_PATH}/jre/bin/java ]; then
 INSTALL_JRE_PATH=${INSTALL_JRE_PATH}/jre
 fi
@@ -502,13 +502,13 @@ compare_java_by_release() {
 _compare_java_by_weight $1 $2 ${KNOWN_GOOD_NAME_LIST}
 }
 find_latest_release() {
-if [ -d <%= node['java']['oracle']['config']['app_dir'] %> ]; then
-    latest_release=`find <%= node['java']['oracle']['config']['app_dir'] %>/* -prune | \
+if [ -d <%= node['java']['setup']['app_dir'] %> ]; then
+    latest_release=`find <%= node['java']['setup']['app_dir'] %>/* -prune | \
         get_weighted_list -v --good-list="${KNOWN_GOOD_NAME_LIST}" | \
         sort -k1n -k2n -k3n -k4n -k5rn -k6rn | tail -n 1 | cut -c 37-`
 fi
 if [ -d "${RPM_INSTALL_PREFIX}" ] && \
-   [ "<%= node['java']['oracle']['config']['app_dir'] %>" != "${RPM_INSTALL_PREFIX}" ]
+   [ "<%= node['java']['setup']['app_dir'] %>" != "${RPM_INSTALL_PREFIX}" ]
 then
     prefix_release=`find ${RPM_INSTALL_PREFIX}/* -prune | \
         get_weighted_list -v --good-list="${KNOWN_GOOD_NAME_LIST}" | \
@@ -661,8 +661,8 @@ jdkbindir=$1
 #
 # Unpack the packed JAR files.
 #
-unpack_jars "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>/bin/unpack200" \
-            "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>" \
+unpack_jars "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/bin/unpack200" \
+            "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" \
             lib/tools.jar jre/lib/plugin.jar jre/lib/javaws.jar jre/lib/deploy.jar jre/lib/rt.jar jre/lib/jsse.jar jre/lib/charsets.jar jre/lib/ext/localedata.jar
 
 
@@ -672,55 +672,55 @@ unpack_jars "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract
 # difficult for future installers.
 #
 LATEST_JAVA_PATH="`find_latest_release`"
-if [ "${LATEST_JAVA_PATH}" == "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>" ] ||
-   [ "${LATEST_JAVA_PATH}" == "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>" ]
+if [ "${LATEST_JAVA_PATH}" == "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" ] ||
+   [ "${LATEST_JAVA_PATH}" == "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" ]
 then
     #
-    # Make sure the <%= node['java']['oracle']['config']['app_dir'] %>/latest link points to LATEST_JAVA_PATH, and
+    # Make sure the <%= node['java']['setup']['app_dir'] %>/latest link points to LATEST_JAVA_PATH, and
 # update it if it doesn't.
     #
-    setup_latest_link "${LATEST_JAVA_PATH}" "<%= node['java']['oracle']['config']['app_dir'] %>/latest"
+    setup_latest_link "${LATEST_JAVA_PATH}" "<%= node['java']['setup']['app_dir'] %>/latest"
 
     #
-    # Make sure the <%= node['java']['oracle']['config']['app_dir'] %>/default and java javaws jcontrol javac jar javadoc exist.
+    # Make sure the <%= node['java']['setup']['app_dir'] %>/default and java javaws jcontrol javac jar javadoc exist.
 # If anything is missing, create it.
     #
-    setup_default_links "<%= node['java']['oracle']['config']['app_dir'] %>/latest" "<%= node['java']['oracle']['config']['app_dir'] %>/default" \
+    setup_default_links "<%= node['java']['setup']['app_dir'] %>/latest" "<%= node['java']['setup']['app_dir'] %>/default" \
                         "/usr/bin" java javaws jcontrol javac jar javadoc
 
     #
     # If the "latest" link is a JDK, then the latest JRE is a subdir;
 # otherwise it is the same dir.
     #
-    DEFAULT_JRE_PATH="<%= node['java']['oracle']['config']['app_dir'] %>/default"
-    if [ -e "<%= node['java']['oracle']['config']['app_dir'] %>/default/jre/bin/java" ]; then
-        DEFAULT_JRE_PATH="<%= node['java']['oracle']['config']['app_dir'] %>/default/jre"
+    DEFAULT_JRE_PATH="<%= node['java']['setup']['app_dir'] %>/default"
+    if [ -e "<%= node['java']['setup']['app_dir'] %>/default/jre/bin/java" ]; then
+        DEFAULT_JRE_PATH="<%= node['java']['setup']['app_dir'] %>/default/jre"
     fi
 
 fi
 
 #
 # If the package is being relocated, then create a link in the default
-# location (<%= node['java']['oracle']['config']['app_dir'] %>) to the actual install directory.  Do this
+# location (<%= node['java']['setup']['app_dir'] %>) to the actual install directory.  Do this
 # last, so it doesn't add unnecessary complexity to the search for the
 # latest release.
 #
-if [ "${RPM_INSTALL_PREFIX}" != "<%= node['java']['oracle']['config']['app_dir'] %>" ] &&
-   ( [ ! -e "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>" ] || [ -h "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>" ] )
+if [ "${RPM_INSTALL_PREFIX}" != "<%= node['java']['setup']['app_dir'] %>" ] &&
+   ( [ ! -e "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" ] || [ -h "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" ] )
 then
-    rm -f "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>"
-    ln -s "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>" "<%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>"
+    rm -f "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>"
+    ln -s "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>"
 fi
 
 if [ ! -f "/etc/.java/" ]
 then
 mkdir -p "/etc/.java/"
-ln -s "<%= node['java']['oracle']['config']['app_dir'] %>/latest/.java/.systemPrefs" "/etc/.java/" 2> /dev/null
+ln -s "<%= node['java']['setup']['app_dir'] %>/latest/.java/.systemPrefs" "/etc/.java/" 2> /dev/null
 fi
 
 if [ ! -f "/etc/init.d/jexec" ]
 then
-ln -s "<%= node['java']['oracle']['config']['app_dir'] %>/latest/.java/init.d/jexec" "/etc/init.d" 2> /dev/null
+ln -s "<%= node['java']['setup']['app_dir'] %>/latest/.java/init.d/jexec" "/etc/init.d" 2> /dev/null
 fi
 
 #
@@ -731,63 +731,63 @@ fi
 # a .rpmnew extension.  Try to use the best possible file (i.e. save old
 # preference settings).
 #
-if [ -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmsave ] &&
-   [ ! -s <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock ]
+if [ -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmsave ] &&
+   [ ! -s <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock ]
 then
     #
     # Only overwrite if old file is empty (rpmsave is only created if it is
     # non-empty).
     #
-    rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock
-    mv <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmsave \
-       <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock
-elif [ -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmnew ]
+    rm -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock
+    mv <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmsave \
+       <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock
+elif [ -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmnew ]
 then
-    if [ -s <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock ]; then
+    if [ -s <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock ]; then
         #
         # The existing lock is non-empty, so there is no reason to keep the
         # .rpmnew one created during this install.
         #
-        rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmnew
+        rm -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmnew
     else
         #
         # The existing lock is empty, so replace it with the new one.  This
         # makes future installs a little cleaner, since the file in use is
         # the file in the RPM database.
         #
-        rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock
-        mv <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmnew \
-           <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.system.lock
+        rm -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock
+        mv <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock.rpmnew \
+           <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.system.lock
     fi
 fi
 
-if [ -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmsave ] &&
-   [ ! -s <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile ]
+if [ -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmsave ] &&
+   [ ! -s <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile ]
 then
     #
     # Only overwrite if old file is empty (rpmsave is only created if it is
     # non-empty).
     #
-    rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
-    mv <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmsave \
-       <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
-elif [ -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmnew ]
+    rm -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
+    mv <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmsave \
+       <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
+elif [ -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmnew ]
 then
-    if [ -s <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile ]; then
+    if [ -s <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile ]; then
         #
         # The existing lock is non-empty, so there is no reason to keep the
         # .rpmnew one created during this install.
         #
-        rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmnew
+        rm -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmnew
     else
         #
         # The existing lock is empty, so replace it with the new one.  This
         # makes future installs a little cleaner, since the file in use is
         # the file in the RPM database.
         #
-        rm -f <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
-        mv <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmnew \
-           <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
+        rm -f <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
+        mv <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile.rpmnew \
+           <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/.systemPrefs/.systemRootModFile
     fi
 fi
 
@@ -802,12 +802,12 @@ if [ -x /usr/lib/lsb/install_initd ]; then
     /usr/lib/lsb/install_initd jexec > /dev/null 2>&1
 
     # start the service for the current session
-    <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
+    <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
 elif [ -x /sbin/chkconfig ]; then
     /sbin/chkconfig --add jexec > /dev/null 2>&1
 
     # start the service for the current session
-    <%= node['java']['oracle']['config']['app_dir'] %>/<%= node['java']['oracle']['config']['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
+    <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
 fi
 if [ -f "${INSTALL_JRE_PATH}/lib/javasettings" ]; then
     ${INSTALL_JRE_PATH}/lib/javasettings 2> /var/log/java_install.log
@@ -827,9 +827,9 @@ fi
 # Register alternatives for java for jre and javac for jdk
 #
 if [ 1 = 1 ]; then
-    INSTALL_JDK_PATH=${RPM_INSTALL_PREFIX}/<%= node['java']['oracle']['config']['extract_dir'] %>
-     alt_install_java <%= node['java']['oracle']['config']['alt_priority'] %> "${INSTALL_JDK_PATH}/jre/bin" "${INSTALL_JDK_PATH}/man/man1"
-    alt_install_javac <%= node['java']['oracle']['config']['alt_priority'] %> "${INSTALL_JDK_PATH}/bin" "${INSTALL_JDK_PATH}/man/man1"
+    INSTALL_JDK_PATH=${RPM_INSTALL_PREFIX}/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>
+     alt_install_java <%= node['java']['oracle_source'][@java_version]['alt_priority'] %> "${INSTALL_JDK_PATH}/jre/bin" "${INSTALL_JDK_PATH}/man/man1"
+    alt_install_javac <%= node['java']['oracle_source'][@java_version]['alt_priority'] %> "${INSTALL_JDK_PATH}/bin" "${INSTALL_JDK_PATH}/man/man1"
 else
-     alt_install_java <%= node['java']['oracle']['config']['alt_priority'] %> "${INSTALL_JRE_PATH}/bin" "${INSTALL_JRE_PATH}/man/man1"
+     alt_install_java <%= node['java']['oracle_source'][@java_version]['alt_priority'] %> "${INSTALL_JRE_PATH}/bin" "${INSTALL_JRE_PATH}/man/man1"
 fi

@@ -2,9 +2,9 @@
 # Cookbook:: java-chef
 # Recipe:: oracle_rpm
 #
-# The MIT License (MIT)
+# The MIT License
 #
-# Copyright:: 2018, Ryan Hansohn
+# Copyright (c) 2018 Ryan Hansohn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -25,29 +25,32 @@
 # THE SOFTWARE.
 
 # create application directories
-directory "make_#{node['java']['oracle']['config']['app_dir']}" do
-  path node['java']['oracle']['config']['app_dir']
+directory "make_#{node['java']['setup']['app_dir']}" do
+  path node['java']['setup']['app_dir']
   recursive true
 end
-directory "make_#{node['java']['oracle']['config']['app_dir']}/tmp" do
-  path "#{node['java']['oracle']['config']['app_dir']}/tmp"
+directory "make_#{node['java']['setup']['app_dir']}/downloads" do
+  path "#{node['java']['setup']['app_dir']}/downloads"
   recursive true
 end
 
 # download and install source
+java_version = -> { node['java']['install_version'] }
+
 # install
-bash "install_#{node['java']['install_version']}" do
-  code "rpm -Uv #{node['java']['oracle']['config']['app_dir']}/tmp/#{node['java']['oracle']['url'].split('/')[-1]}"
-  cwd "#{node['java']['oracle']['config']['app_dir']}/tmp"
+bash "install_#{java_version.call}" do
+  code "rpm -Uv #{node['java']['setup']['app_dir']}/downloads/#{node['java']['oracle']['url'].split('/')[-1]}"
+  cwd "#{node['java']['setup']['app_dir']}/downloads"
   action :nothing
 end
+
 # download
-bash "download_#{node['java']['install_version']}" do
-  code "curl #{node['java']['oracle']['config']['dl_options']} \
-          #{node['java']['oracle']['url']} \
-          -o #{node['java']['oracle']['url'].split('/')[-1]}"
-  cwd "#{node['java']['oracle']['config']['app_dir']}/tmp"
+bash "download_#{java_version.call}" do
+  code "curl #{node['java']['setup']['dl_options']} \
+          #{node['java']['oracle_rpm'][java_version.call]['url']} \
+          -o #{node['java']['oracle_rpm'][java_version.call]['url'].split('/')[-1]}"
+  cwd "#{node['java']['setup']['app_dir']}/downloads"
   action :run
-  notifies :run, "bash[install_#{node['java']['install_version']}]", :immediately
-  not_if { File.exist?("#{node['java']['oracle']['config']['app_dir']}/tmp/#{node['java']['oracle']['url'].split('/')[-1]}") }
+  notifies :run, "bash[install_#{java_version.call}]", :immediately
+  not_if { File.exist?("#{node['java']['setup']['app_dir']}/downloads/#{node['java']['oracle_rpm'][java_version.call]['url'].split('/')[-1]}") }
 end

@@ -18,17 +18,17 @@ control 'java-chef::oracle_source' do
     it { should exist }
     it { should be_directory }
   end
-  describe file('/usr/java/tmp') do
+  describe file('/usr/java/downloads') do
     it { should exist }
     it { should be_directory }
   end
 
   # test file(s)
-  describe file('/usr/java/tmp/postinstall.sh') do
+  describe file('/usr/java/downloads/postinstall.sh') do
     it { should exist }
     it { should be_file }
   end
-  describe file('/usr/java/tmp/verify.sh') do
+  describe file('/usr/java/downloads/verify.sh') do
     it { should exist }
     it { should be_file }
   end

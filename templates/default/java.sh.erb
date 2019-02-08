@@ -2,7 +2,7 @@
 
 <% case node['java']['install_from']
 when 'oracle_package', 'oracle_rpm', 'oracle_source' -%>
-export JAVA_HOME=<%= node['java']['oracle']['config']['app_dir'] %>/latest
+export JAVA_HOME=<%= node['java']['setup']['app_dir'] %>/latest
 <% when 'openjdk_package' -%>
 export JAVA_HOME=/usr/lib/jvm/jre
 <%- end %> 

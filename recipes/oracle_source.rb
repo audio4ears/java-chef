@@ -2,9 +2,9 @@
 # Cookbook:: java-chef
 # Recipe:: oracle_source
 #
-# The MIT License (MIT)
+# The MIT License
 #
-# Copyright:: 2018, Ryan Hansohn
+# Copyright (c) 2018 Ryan Hansohn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,62 +27,64 @@
 # include package(s)
 package ['unzip']
 
+java_version = -> { node['java']['install_version'] }
+
 # create application directories
-# directory "make_#{node['java']['oracle']['config']['app_dir']}" do
-#   path node['java']['oracle']['config']['app_dir']
-#   recursive true
-# end
-directory "make_#{node['java']['oracle']['config']['app_dir']}/tmp" do
-  path "#{node['java']['oracle']['config']['app_dir']}/tmp"
+directory "make_#{node['java']['setup']['app_dir']}/downloads" do
+  path "#{node['java']['setup']['app_dir']}/downloads"
   recursive true
 end
-directory "make_#{node['java']['oracle']['config']['app_dir']}/#{node['java']['oracle']['config']['extract_dir']}" do
-  path "#{node['java']['oracle']['config']['app_dir']}/#{node['java']['oracle']['config']['extract_dir']}"
+
+directory "make_#{node['java']['setup']['app_dir']}/#{node['java']['oracle_source'][java_version.call]['extract_dir']}" do
+  path "#{node['java']['setup']['app_dir']}/#{node['java']['oracle_source'][java_version.call]['extract_dir']}"
   recursive true
 end
 
 # download and extract source
 # extract
-bash "extract_#{node['java']['install_version']}" do
-  code "tar xvzf #{node['java']['oracle']['url'].split('/')[-1]} \
+bash "extract_#{java_version.call}" do
+  code "tar xvzf #{node['java']['oracle_source'][java_version.call]['url'].split('/')[-1]} \
           --strip-components=1 \
-          -C #{node['java']['oracle']['config']['app_dir']}/#{node['java']['oracle']['config']['extract_dir']}"
-  cwd "#{node['java']['oracle']['config']['app_dir']}/tmp"
+          -C #{node['java']['setup']['app_dir']}/#{node['java']['oracle_source'][java_version.call]['extract_dir']}"
+  cwd "#{node['java']['setup']['app_dir']}/downloads"
   action :nothing
 end
 # download
-bash "download_#{node['java']['install_version']}" do
-  code "curl #{node['java']['oracle']['config']['dl_options']} \
-          #{node['java']['oracle']['url']} \
-          -o #{node['java']['oracle']['url'].split('/')[-1]}"
-  cwd "#{node['java']['oracle']['config']['app_dir']}/tmp"
+bash "download_#{java_version.call}" do
+  code "curl #{node['java']['setup']['dl_options']} \
+          #{node['java']['oracle_source'][java_version.call]['url']} \
+          -o #{node['java']['oracle_source'][java_version.call]['url'].split('/')[-1]}"
+  cwd "#{node['java']['setup']['app_dir']}/downloads"
   action :run
-  notifies :run, "bash[extract_#{node['java']['install_version']}]", :immediately
-  not_if  { File.exist?("#{node['java']['oracle']['config']['app_dir']}/tmp/#{node['java']['oracle']['url'].split('/')[-1]}") }
+  notifies :run, "bash[extract_#{java_version.call}]", :immediately
+  not_if  { File.exist?("#{node['java']['setup']['app_dir']}/downloads/#{node['java']['oracle_source'][java_version.call]['url'].split('/')[-1]}") }
 end
 
 # create and run execute scripts
 ['postinstall.sh', 'verify.sh'].each do |script|
   # execute
-  execute "run_#{node['java']['oracle']['config']['app_dir']}/tmp/#{script}" do
-    command "#{node['java']['oracle']['config']['app_dir']}/tmp/#{script}"
+  execute "run_#{node['java']['setup']['app_dir']}/downloads/#{script}" do
+    command "#{node['java']['setup']['app_dir']}/downloads/#{script}"
     action :nothing
   end
   # create
-  template "create_#{node['java']['oracle']['config']['app_dir']}/tmp/#{script}" do
-    path "#{node['java']['oracle']['config']['app_dir']}/tmp/#{script}"
+  template "create_#{node['java']['setup']['app_dir']}/downloads/#{script}" do
+    path "#{node['java']['setup']['app_dir']}/downloads/#{script}"
     source "#{script}.erb"
     mode 0755
+    variables(
+      'java_version' => java_version.call
+    )
     action :create
     sensitive true
-    notifies :run, "execute[run_#{node['java']['oracle']['config']['app_dir']}/tmp/#{script}]", :immediately
+    notifies :run, "execute[run_#{node['java']['setup']['app_dir']}/downloads/#{script}]", :immediately
   end
 end
 
 # create symlinks
 # directory symlinks
-if defined?(node['java']['oracle']['config']['symlinks'])
-  node['java']['oracle']['config']['symlinks'].each do |symlink|
+if defined?(node['java']['setup']['symlinks'])
+  node['java']['setup']['symlinks'].each do |symlink|
     symlink_file = symlink.split('/')[-1]
     symlink_path = symlink.chomp(symlink_file)
     directory "make_#{symlink_path}" do
@@ -90,9 +92,9 @@ if defined?(node['java']['oracle']['config']['symlinks'])
       recursive true
       not_if { File.exist?(symlink_path) }
     end
-    link "symlink_#{node['java']['install_version']}_#{symlink}" do
+    link "symlink_#{java_version.call}_#{symlink}" do
       target_file symlink
-      to "#{node['java']['oracle']['config']['app_dir']}/#{node['java']['oracle']['config']['extract_dir']}"
+      to "#{node['java']['setup']['app_dir']}/#{node['java']['oracle_source'][java_version.call]['extract_dir']}"
     end
   end
 end

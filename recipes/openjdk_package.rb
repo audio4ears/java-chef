@@ -2,9 +2,9 @@
 # Cookbook:: java-chef
 # Recipe:: openjdk_package
 #
-# The MIT License (MIT)
+# The MIT License
 #
-# Copyright:: 2018, The Authors, All Rights Reserved.
+# Copyright (c) 2018 Ryan Hansohn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+java_version = -> { node['java']['install_version'] }
+
 # install openjdk from repo
-package 'install_openjdk' do
-  package_name node['java']['openjdk']['package']
-  version node['java']['openjdk']['package_version']
+package 'java_install_openjdk_package' do
+  package_name node['java']['openjdk_package'][java_version.call]['package']
+  version node['java']['openjdk_package'][java_version.call]['package_version']
 end
