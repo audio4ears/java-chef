@@ -39,4 +39,4 @@ suites:
     attributes:
       java:
         install_from: 'oracle_source'
-        install_version: 'jdk-8u181-linux-x64'
+        install_version: 'jdk-8u201-linux-x64'
