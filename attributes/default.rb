@@ -1,7 +1,27 @@
 # java
 default['java'] = {
-  'install_from' => 'oracle_source',
-  'install_version' => 'jdk-8u201-linux-x64',
+  'install_from' => 'amazon_source',
+  'install_version' => 'jdk-8u212-linux-x64',
+  'amazon_rpm' => {
+    'jdk-8u212-linux-x64' => {
+      'url' => 'https://d3pxv6yz143wms.cloudfront.net/8.212.04.2/java-1.8.0-amazon-corretto-devel-1.8.0_212.b04-2.x86_64.rpm',
+      'checksum' => 'f137ea8cd0b0041add85b461cc0ea62fdc939360034308c4e20d3184faf9f2ed',
+    },
+  },
+  'amazon_source' => {
+    'jdk-8u212-linux-x64' => {
+      'extract_dir' => 'jdk1.8.0_211',
+      'alt_priority' => '18000211',
+      'url' => 'https://d3pxv6yz143wms.cloudfront.net/8.212.04.2/amazon-corretto-8.212.04.2-linux-x64.tar.gz',
+      'checksum' => '84241d523798c1df5b7c5e2e57615a8761b6eb8386eb87026895803319d3c5ce',
+    },
+  },
+  'openjdk_package' => {
+    'java-1.8.0-openjdk-devel' => {
+      'package' => 'java-1.8.0-openjdk-devel',
+      'package_version' => '1.8.0.212.b04-1',
+    },
+  },
   'oracle_package' => {
     'jdk-8u172-linux-x64' => {
       'package' => 'jdk-8u172-linux-x64',
@@ -64,12 +84,6 @@ default['java'] = {
       'alt_priority' => '18000201',
       'url' => 'https://download.oracle.com/otn-pub/java/jdk/8u201-b09/42970487e3af4f5aa5bca3f542482c60/jdk-8u201-linux-x64.tar.gz',
       'checksum' => 'cb700cc0ac3ddc728a567c350881ce7e25118eaf7ca97ca9705d4580c506e370',
-    },
-  },
-  'openjdk_package' => {
-    'java-1.8.0-openjdk-devel' => {
-      'package' => 'java-1.8.0-openjdk-devel',
-      'package_version' => '1.8.0.171-8.b10.el7_5',
     },
   },
   'setup' => {

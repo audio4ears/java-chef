@@ -1,6 +1,6 @@
 #
 # Cookbook:: java-chef
-# Recipe:: install
+# Recipe:: amazon_corretto
 #
 # The MIT License
 #
@@ -24,19 +24,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# install java
-case node['java']['install_from']
-when 'amazon_rpm'
-  include_recipe "#{cookbook_name}::amazon_rpm"
-when 'amazon_source'
-  include_recipe "#{cookbook_name}::amazon_source"
-when 'openjdk_package'
-  include_recipe "#{cookbook_name}::openjdk_package"
-when 'oracle_package'
-  include_recipe "#{cookbook_name}::oracle_package"
-when 'oracle_rpm'
-  include_recipe "#{cookbook_name}::oracle_rpm"
-when 'oracle_source'
-  include_recipe "#{cookbook_name}::oracle_source"
+java_version = -> { node['java']['install_version'] }
+java_source = -> { node['java']['amazon_rpm'][java_version.call]['url'] }
+java_checksum = -> { node['java']['amazon_rpm'][java_version.call]['checksum'] }
+
+# create application directories
+directory "make_#{node['java']['setup']['app_dir']}/downloads" do
+  path "#{node['java']['setup']['app_dir']}/downloads"
+  recursive true
 end
-include_recipe "#{cookbook_name}::config"
+
+# install
+bash "install_#{java_version.call}" do
+  code "rpm -Uv #{node['java']['setup']['app_dir']}/downloads/#{node['java']['amazon_rpm'][java_version.call]['url'].split('/')[-1]}"
+  cwd "#{node['java']['setup']['app_dir']}/downloads"
+  action :nothing
+end
+
+# download
+remote_file "download_#{java_version.call}" do
+  path "#{node['java']['setup']['app_dir']}/downloads/#{node['java']['amazon_rpm'][java_version.call]['url'].split('/')[-1]}"
+  source java_source.call
+  checksum java_checksum.call
+  mode '0755'
+  action :create_if_missing
+  notifies :run, "bash[install_#{java_version.call}]", :immediately
+end

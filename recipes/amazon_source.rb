@@ -1,6 +1,6 @@
 #
 # Cookbook:: java-chef
-# Recipe:: oracle_source
+# Recipe:: amazon_source
 #
 # The MIT License
 #
@@ -28,6 +28,8 @@
 package ['unzip']
 
 java_version = -> { node['java']['install_version'] }
+java_source = -> { node['java']['amazon_source'][java_version.call]['url'] }
+java_checksum = -> { node['java']['amazon_source'][java_version.call]['checksum'] }
 
 # create application directories
 directory "make_#{node['java']['setup']['app_dir']}/downloads" do
@@ -35,29 +37,28 @@ directory "make_#{node['java']['setup']['app_dir']}/downloads" do
   recursive true
 end
 
-directory "make_#{node['java']['setup']['app_dir']}/#{node['java']['oracle_source'][java_version.call]['extract_dir']}" do
-  path "#{node['java']['setup']['app_dir']}/#{node['java']['oracle_source'][java_version.call]['extract_dir']}"
+directory "make_#{node['java']['setup']['app_dir']}/#{node['java']['amazon_source'][java_version.call]['extract_dir']}" do
+  path "#{node['java']['setup']['app_dir']}/#{node['java']['amazon_source'][java_version.call]['extract_dir']}"
   recursive true
 end
 
 # download and extract source
 # extract
 bash "extract_#{java_version.call}" do
-  code "tar xvzf #{node['java']['oracle_source'][java_version.call]['url'].split('/')[-1]} \
+  code "tar xvzf #{node['java']['amazon_source'][java_version.call]['url'].split('/')[-1]} \
           --strip-components=1 \
-          -C #{node['java']['setup']['app_dir']}/#{node['java']['oracle_source'][java_version.call]['extract_dir']}"
+          -C #{node['java']['setup']['app_dir']}/#{node['java']['amazon_source'][java_version.call]['extract_dir']}"
   cwd "#{node['java']['setup']['app_dir']}/downloads"
   action :nothing
 end
 # download
-bash "download_#{java_version.call}" do
-  code "curl #{node['java']['setup']['dl_options']} \
-          #{node['java']['oracle_source'][java_version.call]['url']} \
-          -o #{node['java']['oracle_source'][java_version.call]['url'].split('/')[-1]}"
-  cwd "#{node['java']['setup']['app_dir']}/downloads"
-  action :run
+remote_file "download_#{java_version.call}" do
+  path "#{node['java']['setup']['app_dir']}/downloads/#{node['java']['amazon_source'][java_version.call]['url'].split('/')[-1]}"
+  source java_source.call
+  checksum java_checksum.call
+  mode '0755'
+  action :create_if_missing
   notifies :run, "bash[extract_#{java_version.call}]", :immediately
-  not_if  { File.exist?("#{node['java']['setup']['app_dir']}/downloads/#{node['java']['oracle_source'][java_version.call]['url'].split('/')[-1]}") }
 end
 
 # create and run execute scripts
@@ -73,7 +74,7 @@ end
     source "#{script}.erb"
     mode 0755
     variables(
-      'java_source' => 'oracle_source',
+      'java_source' => 'amazon_source',
       'java_version' => java_version.call
     )
     action :create
@@ -95,7 +96,7 @@ if defined?(node['java']['setup']['symlinks'])
     end
     link "symlink_#{java_version.call}_#{symlink}" do
       target_file symlink
-      to "#{node['java']['setup']['app_dir']}/#{node['java']['oracle_source'][java_version.call]['extract_dir']}"
+      to "#{node['java']['setup']['app_dir']}/#{node['java']['amazon_source'][java_version.call]['extract_dir']}"
     end
   end
 end

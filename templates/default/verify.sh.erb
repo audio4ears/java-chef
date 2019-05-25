@@ -38,7 +38,7 @@ if [ "${GNOMEDIR}" = "/opt/gnome" ] && [ -d "/opt/gnome2" ]; then
 GNOMEDIR="/opt/gnome2"
 fi
 
-INSTALL_JRE_PATH=${RPM_INSTALL_PREFIX}/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>
+INSTALL_JRE_PATH=${RPM_INSTALL_PREFIX}/<%= node['java'][@java_source][@java_version]['extract_dir'] %>
 if [ -e ${INSTALL_JRE_PATH}/jre/bin/java ]; then
 INSTALL_JRE_PATH=${INSTALL_JRE_PATH}/jre
 fi
@@ -590,9 +590,9 @@ fi
 # link, but only if it really points to this package.
 #
 if [ "${RPM_INSTALL_PREFIX}" != "<%= node['java']['setup']['app_dir'] %>" ] &&
-   [ "`dereference --follow \"<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>\"`" = "${RPM_INSTALL_PREFIX}" ]
+   [ "`dereference --follow \"<%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>\"`" = "${RPM_INSTALL_PREFIX}" ]
 then
-    rm -f "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>"
+    rm -f "<%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>"
 fi
 
 #
@@ -601,8 +601,8 @@ fi
 # it difficult for future installers.
 #
 LATEST_JAVA_PATH="`find_latest_release`"
-if [ "${LATEST_JAVA_PATH}" == "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" ] ||
-   [ "${LATEST_JAVA_PATH}" == "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" ]
+if [ "${LATEST_JAVA_PATH}" == "${RPM_INSTALL_PREFIX}/<%= node['java'][@java_source][@java_version]['extract_dir'] %>" ] ||
+   [ "${LATEST_JAVA_PATH}" == "<%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>" ]
 then
     #
     # Make sure the <%= node['java']['setup']['app_dir'] %>/latest link points to LATEST_JAVA_PATH, and
@@ -636,17 +636,17 @@ fi
 # latest release.
 #
 if [ "${RPM_INSTALL_PREFIX}" != "<%= node['java']['setup']['app_dir'] %>" ] &&
-   ( [ ! -e "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" ] || [ -h "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" ] )
+   ( [ ! -e "<%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>" ] || [ -h "<%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>" ] )
 then
-    rm -f "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>"
-    ln -s "${RPM_INSTALL_PREFIX}/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>" "<%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>"
+    rm -f "<%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>"
+    ln -s "${RPM_INSTALL_PREFIX}/<%= node['java'][@java_source][@java_version]['extract_dir'] %>" "<%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>"
 fi
 
 #
 # There should be an init script for jexec on the system.  If it is, then
 # make sure it's installed and running
 #
-if [ -x <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/init.d/jexec ]; then
+if [ -x <%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>/.java/init.d/jexec ]; then
     #
     # Try to register the init script to the various run levels.  If
 # possible this is accomplished using an LSB defined install tool.
@@ -659,11 +659,11 @@ if [ -x <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'
         /usr/lib/lsb/install_initd jexec > /dev/null 2>&1
 
         # start the service for the current session
-        <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
+        <%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
     elif [ -x /sbin/chkconfig ]; then
         /sbin/chkconfig --add jexec > /dev/null 2>&1
 
         # start the service for the current session
-        <%= node['java']['setup']['app_dir'] %>/<%= node['java']['oracle_source'][@java_version]['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
+        <%= node['java']['setup']['app_dir'] %>/<%= node['java'][@java_source][@java_version]['extract_dir'] %>/.java/init.d/jexec start > /dev/null 2>&1
     fi
 fi

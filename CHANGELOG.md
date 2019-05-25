@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - no new features in development at this time
 
+## [2.1.0](https://github.com/hansohn/java-chef/compare/2.0.0...2.1.0) (May 24, 2019)
+
+FEATURES:
+
+- use amazon corretto as a replacement to oracle java
+
+KNOWN ISSUES:
+
+- oracle java has changed its license model and is no longer functional
+
 ## [2.0.0](https://github.com/hansohn/java-chef/compare/1.1.0...2.0.0) (Feb 08, 2019)
 
 FEATURES:
