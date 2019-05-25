@@ -4,10 +4,11 @@ driver:
 
 provisioner:
   product_name: chef
-  product_version: latest
+  product_version: 14
   channel: stable
   install_strategy: once
   always_update_cookbooks: true
+  chef_license: accept
   #log_level: info
 
 verifier:
@@ -31,5 +32,5 @@ suites:
         - test/integration/default
     attributes:
       java:
-        install_from: 'oracle_source'
-        install_version: 'jdk-8u201-linux-x64'
+        install_from: 'amazon_source'
+        install_version: 'jdk-8u212-linux-x64'
