@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/hansohn/java-chef.svg?branch=master)](https://travis-ci.org/hansohn/java-chef) [![GitHub tag](https://img.shields.io/github/tag/hansohn/java-chef.svg)](https://github.com/hansohn/java-chef)
 
-This cookbook installs [Java SE Development Kit](https://www.oracle.com/java/index.html), which is typically utilized to satisfy the Java prerequisite for other applications.
+This cookbook installs Java JDK, which is typically utilized to satisfy the Java prerequisite for other applications.
 
 ### Why another Java Cookbook?
 
