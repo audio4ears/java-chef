@@ -27,7 +27,8 @@ env:
 
 before_script:
   - sudo iptables -L DOCKER || ( echo "DOCKER iptables chain missing" ; sudo iptables -N DOCKER )
-  - find / -name chef -type f
+  - sudo find /usr/bin -name chef -type f
+  - sudo find /usr/local/bin -name chef -type f
   - eval "$(chef shell-init bash)"
   - chef --version
   - cookstyle --version
