@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 - no new features in development at this time
 
+## [2.1.1](https://github.com/hansohn/java-chef/compare/2.1.0...2.1.1) (May 29, 2019)
+
+BUG FIXES:
+
+- set correct extract_dir and alt_priority vaules for amazon_corretto
+
 ## [2.1.0](https://github.com/hansohn/java-chef/compare/2.0.0...2.1.0) (May 24, 2019)
 
 FEATURES:
