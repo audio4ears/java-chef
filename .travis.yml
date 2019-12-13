@@ -37,5 +37,5 @@ script: kitchen verify ${INSTANCE}
 matrix:
   include:
     - script:
-      - chef exec delivery local all
+      - chef exec delivery local all --chef-license accept
       env: UNIT_AND_LINT=1
