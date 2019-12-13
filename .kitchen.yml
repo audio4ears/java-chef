@@ -16,7 +16,7 @@ verifier:
   name: inspec
 
 platforms:
-  - name: centos-7.6
+  - name: centos-7
 
 suites:
   - name: default
@@ -34,4 +34,4 @@ suites:
     attributes:
       java:
         install_from: 'amazon_source'
-        install_version: 'jdk-8u212-linux-x64'
+        install_version: 'jdk-8u232-linux-x64'
