@@ -2,9 +2,9 @@
 # Cookbook:: java-chef
 # Recipe:: config
 #
-# The MIT License
+# The MIT License (MIT)
 #
-# Copyright (c) 2018 Ryan Hansohn
+# Copyright:: 2018, Ryan Hansohn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,6 @@
 template 'create_/etc/profile.d/java.sh' do
   path '/etc/profile.d/java.sh'
   source 'java.sh.erb'
-  mode 0644
+  mode '0644'
   action :create
 end

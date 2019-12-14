@@ -2,9 +2,9 @@
 # Cookbook:: java-chef
 # Recipe:: install
 #
-# The MIT License
+# The MIT License (MIT)
 #
-# Copyright (c) 2018 Ryan Hansohn
+# Copyright:: 2018, Ryan Hansohn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,8 @@
 
 # install java
 case node['java']['install_from']
+when 'adoptopenjdk_source'
+  include_recipe "#{cookbook_name}::adoptopenjdk_source"
 when 'amazon_rpm'
   include_recipe "#{cookbook_name}::amazon_rpm"
 when 'amazon_source'

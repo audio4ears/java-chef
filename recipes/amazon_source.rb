@@ -2,9 +2,9 @@
 # Cookbook:: java-chef
 # Recipe:: amazon_source
 #
-# The MIT License
+# The MIT License (MIT)
 #
-# Copyright (c) 2018 Ryan Hansohn
+# Copyright:: 2018, Ryan Hansohn
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,7 @@ end
   template "create_#{node['java']['setup']['app_dir']}/downloads/#{script}" do
     path "#{node['java']['setup']['app_dir']}/downloads/#{script}"
     source "#{script}.erb"
-    mode 0755
+    mode '0755'
     variables(
       'java_source' => 'amazon_source',
       'java_version' => java_version.call
