@@ -7,11 +7,7 @@ before_install:
   - echo "deb https://packages.chef.io/repos/apt/current bionic main" > chef-current.list
   - sudo mv chef-current.list /etc/apt/sources.list.d/
   - sudo apt-get update
-
-addons:
-  apt:
-    packages:
-      - chefdk
+  - sudo apt-get -y install chefdk
 
 # Don't `bundle install` which takes about 1.5 mins
 install: echo "skip bundle install"
