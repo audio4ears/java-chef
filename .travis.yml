@@ -5,7 +5,7 @@ before_install:
   - sudo apt-get install apt-transport-https
   - wget -qO - https://packages.chef.io/chef.asc | sudo apt-key add -
   - echo "deb https://packages.chef.io/repos/apt/current bionic main" > chef-current.list
-  - sudo mv chef-stable.list /etc/apt/sources.list.d/
+  - sudo mv chef-current.list /etc/apt/sources.list.d/
   - sudo apt-get update
 
 addons:
