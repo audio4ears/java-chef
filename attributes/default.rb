@@ -2,6 +2,14 @@
 default['java'] = {
   'install_from' => 'amazon_source',
   'install_version' => 'jdk-8u232-linux-x64',
+  'adoptopenjdk_source' => {
+    'jdk-8u232-linux-x64' => {
+      'extract_dir' => 'jdk1.8.0_232',
+      'alt_priority' => '18000232',
+      'url' => 'https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u232-b09/OpenJDK8U-jdk_x64_linux_hotspot_8u232b09.tar.gz',
+      'checksum' => '7b7884f2eb2ba2d47f4c0bf3bb1a2a95b73a3a7734bd47ebf9798483a7bcc423',
+    },
+  },
   'amazon_rpm' => {
     'jdk-8u212-linux-x64' => {
       'url' => 'https://d3pxv6yz143wms.cloudfront.net/8.212.04.2/java-1.8.0-amazon-corretto-devel-1.8.0_212.b04-2.x86_64.rpm',
