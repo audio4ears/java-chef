@@ -27,6 +27,7 @@ This behavior causes problems when you have Oracle Java installed and another pa
 
 ### Java Flavors
 
+- adoptopenjdk_source: install adoptopenjdk source from adoptopenjdk site
 - amazon_rpm: install amazon corretto rpm from amazon site
 - amazon_source: install amazon corretto source from amazon site
 - openjdk_package: install openjdk package from local default repo
@@ -34,6 +35,10 @@ This behavior causes problems when you have Oracle Java installed and another pa
 Java flavors can be selected by adding the following key/values to your attributes file:
 
 ```ruby
+# adoptopenjdk_source
+node['java']['install_from'] = 'adoptopenjdk_source'
+node['java']['install_version'] = 'jdk-8u232-linux-x64'
+
 # amazon_rpm
 node['java']['install_from'] = 'amazon_rpm'
 node['java']['install_version'] = 'jdk-8u232-linux-x64'

@@ -11,6 +11,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 FEATURES:
 
 - bump default version of java to 1.8.0_232
+- add adoptopenjdk source
 
 ## [2.1.1](https://github.com/hansohn/java-chef/compare/2.1.0...2.1.1) (May 29, 2019)
 
