@@ -53,6 +53,10 @@ default['java'] = {
       'package' => 'jdk-8u212-linux-x64',
       'package_verion' => 'jdk1.8-1.8.0_212-fcs.x86_64',
     },
+    'jdk-8u232-linux-x64' => {
+      'package' => '',
+      'package_verion' => '',
+    },
   },
   'oracle_rpm' => {
     'jdk-8u102-linux-x64' => {
@@ -72,6 +76,9 @@ default['java'] = {
     },
     'jdk-8u212-linux-x64' => {
       'url' => 'https://download.oracle.com/otn/java/jdk/8u212-b10/59066701cf1a433da9770636fbc4c9aa/jdk-8u212-linux-x64.rpm',
+    },
+    'jdk-8u232-linux-x64' => {
+      'url' => '',
     },
   },
   'oracle_source' => {
@@ -104,6 +111,11 @@ default['java'] = {
       'extract_dir' => 'jdk1.8.0_212',
       'alt_priority' => '18000212',
       'url' => 'https://download.oracle.com/otn/java/jdk/8u212-b10/59066701cf1a433da9770636fbc4c9aa/jdk-8u212-linux-x64.tar.gz',
+    },
+    'jdk-8u232-linux-x64' => {
+      'extract_dir' => '',
+      'alt_priority' => '',
+      'url' => '',
     },
   },
   'setup' => {
